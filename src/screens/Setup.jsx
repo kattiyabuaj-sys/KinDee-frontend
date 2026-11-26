@@ -1,4 +1,4 @@
-import {dailyTarget,tdee} from '../utils/nutrition'
+import {tdee} from '../utils/nutrition'
 
 const ACT=[
   ['นั่งทำงานเป็นส่วนใหญ่','งานนั่งโต๊ะ แทบไม่ได้ออกกำลังกาย'],
@@ -24,13 +24,9 @@ const Row=({lb,u,k,min,max,v,set})=>{
   )
 }
 
-export default function Setup({u,setU,goals=[],mealCount=3,setMealCount,next}){
+export default function Setup({u,setU,next}){
   const set=(k,v)=>setU({...u,[k]:v})
   const baseTdee=tdee(u)
-  const target=dailyTarget(u,goals)
-  const hasLose=goals.includes('lose')
-  const hasGain=goals.includes('gain')
-  const perMeal=Math.round(target/mealCount/10)*10
 
   return(
     <>
@@ -62,40 +58,11 @@ export default function Setup({u,setU,goals=[],mealCount=3,setMealCount,next}){
             </button>
           ))}
         </div>
-
-        {/* Meal Count Picker */}
-        {setMealCount&&(
-          <div className="card p-4">
-            <div className="flex justify-between text-sm mb-2">
-              <b>จำนวนมื้อต่อวัน</b>
-              <span className="opacity-70">กำหนดแคลต่อมื้อ</span>
-            </div>
-            <div className="grid grid-cols-4 gap-1.5">
-              {[2,3,4,5].map(n=>(
-                <button
-                  key={n}
-                  onClick={()=>setMealCount(n)}
-                  className={`py-2.5 rounded-xl border font-num font-bold text-sm ${mealCount===n?'bg-red text-white border-red':'bg-card border-tan'}`}
-                >
-                  {n} มื้อ
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       <div className="p-4 bg-card border-t border-tan/50 space-y-2">
-        {/* Show adjusted target vs raw TDEE so user understands the goal-based adjustment */}
-        <div className="flex gap-2 flex-wrap justify-center">
+        <div className="flex justify-center">
           <span className="chip">🔥 TDEE: <span className="font-num ml-1">{baseTdee.toLocaleString()}</span> kcal</span>
-          {(hasLose||hasGain)&&(
-            <span className={`chip ${hasLose?'!text-red !border-red/40 !bg-red/10':'!text-green !border-green/40 !bg-green/10'}`}>
-              {hasLose?`🎯 ลดน้ำหนัก: ${target.toLocaleString()} kcal (−20%)`:`💪 เพิ่มน้ำหนัก: ${target.toLocaleString()} kcal (+15%)`}
-            </span>
-          )}
-          {!hasLose&&!hasGain&&<span className="chip">🎯 เป้าหมาย: <span className="font-num ml-1">{target.toLocaleString()}</span> kcal</span>}
-          <span className="chip">🍽️ ต่อมื้อ: <span className="font-num ml-1">{perMeal}</span> kcal ({mealCount} มื้อ)</span>
         </div>
         <button className="cta" onClick={next}>ถัดไป: เลือกความชอบอาหาร →</button>
       </div>

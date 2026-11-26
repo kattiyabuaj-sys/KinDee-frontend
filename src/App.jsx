@@ -65,8 +65,8 @@ export default function App(){
   }
 
   const body=()=>{
-    if(scr==='setup')return<Setup u={u} setU={setU} goals={p.goals} mealCount={mealCount} setMealCount={n=>{setMealCount(n);setUs(s=>({...s,mealCount:n}))}} next={()=>setScr('prefs')}/>
-    if(scr==='prefs')return<Prefs p={p} setP={setP} meals={meals} back={()=>setScr('setup')} next={()=>{setTab('wheel');setScr('main')}}/>
+    if(scr==='setup')return<Setup u={u} setU={setU} next={()=>setScr('prefs')}/>
+    if(scr==='prefs')return<Prefs p={p} setP={setP} meals={meals} u={u} mealCount={mealCount} setMealCount={n=>{setMealCount(n);setUs(s=>({...s,mealCount:n}))}} back={()=>setScr('setup')} next={()=>{setTab('wheel');setScr('main')}}/>
     if(scr==='recipe')return(
       <Recipe
         key={cur.id}

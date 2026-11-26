@@ -1,5 +1,5 @@
 import {GOALS,KITCHEN,RESTRICT} from '../data/mockTags'
-import {filterMeals} from '../utils/nutrition'
+import {dailyTarget,filterMeals,tdee} from '../utils/nutrition'
 
 const NOTE=[
   null,
@@ -21,9 +21,16 @@ const Group=({title,hint,items,sel,tog})=>(
   </section>
 )
 
-export default function Prefs({p,setP,meals,back,next}){
+export default function Prefs({p,setP,meals,u,mealCount,setMealCount,back,next}){
   const tog=k=>id=>setP({...p,[k]:p[k].includes(id)?p[k].filter(x=>x!==id):[...p[k],id]})
   const {list,lvl}=filterMeals(meals,p)
+
+  const baseTdee=tdee(u)
+  const target=dailyTarget(u,p.goals)
+  const hasLose=p.goals.includes('lose')
+  const hasGain=p.goals.includes('gain')
+  const perMeal=Math.round(target/mealCount/10)*10
+
   return(
     <>
       <div className="flex-1 overflow-y-auto px-5 pb-4">
@@ -38,8 +45,38 @@ export default function Prefs({p,setP,meals,back,next}){
         <Group title="เวลาและอุปกรณ์ครัว" items={KITCHEN} sel={p.kit} tog={tog('kit')}/>
         <Group title="ข้อจำกัดอาหาร" items={RESTRICT} sel={p.ex} tog={tog('ex')}/>
         {lvl>0&&<p className="card p-3 text-sm bg-[#F3EEE4]">{NOTE[lvl]}</p>}
+
+        {/* Meal Count Picker */}
+        <div className="card p-4 mt-4">
+          <div className="flex justify-between text-sm mb-2">
+            <b>จำนวนมื้อต่อวัน</b>
+            <span className="opacity-70">กำหนดแคลต่อมื้อ</span>
+          </div>
+          <div className="grid grid-cols-4 gap-1.5">
+            {[2,3,4,5].map(n=>(
+              <button
+                key={n}
+                onClick={()=>setMealCount(n)}
+                className={`py-2.5 rounded-xl border font-num font-bold text-sm ${mealCount===n?'bg-red text-white border-red':'bg-card border-tan'}`}
+              >
+                {n} มื้อ
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
       <div className="p-4 bg-card border-t border-tan/50 space-y-3">
+        {/* Calorie summary — now shown AFTER goals are selected */}
+        <div className="flex gap-2 flex-wrap justify-center">
+          <span className="chip">🔥 TDEE: <span className="font-num ml-1">{baseTdee.toLocaleString()}</span> kcal</span>
+          {(hasLose||hasGain)&&(
+            <span className={`chip ${hasLose?'!text-red !border-red/40 !bg-red/10':'!text-green !border-green/40 !bg-green/10'}`}>
+              {hasLose?`🎯 ลดน้ำหนัก: ${target.toLocaleString()} kcal (−20%)`:`💪 เพิ่มน้ำหนัก: ${target.toLocaleString()} kcal (+15%)`}
+            </span>
+          )}
+          {!hasLose&&!hasGain&&<span className="chip">🎯 เป้าหมาย: <span className="font-num ml-1">{target.toLocaleString()}</span> kcal</span>}
+          <span className="chip">🍽️ ต่อมื้อ: <span className="font-num ml-1">{perMeal}</span> kcal ({mealCount} มื้อ)</span>
+        </div>
         <div className="text-center"><span className="chip">🍴 พบเมนูสุขภาพที่ตรงเงื่อนไข&nbsp;<span className="font-num">{lvl?0:list.length}</span>&nbsp;เมนู{lvl>0&&` (แสดง ${list.length} เมนูใกล้เคียง)`}</span></div>
         <button className="cta" onClick={next}>🎲 ไปที่วงล้อสุ่มเมนู</button>
       </div>
