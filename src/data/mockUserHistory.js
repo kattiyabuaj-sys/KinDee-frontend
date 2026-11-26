@@ -10,6 +10,7 @@ export const DEFAULT_PREFERENCES={goals:['lose'],kit:['q15'],ex:['spicy']}
 export const MOCK_USER_HISTORY={
   biometrics:DEFAULT_BIOMETRICS,
   preferences:DEFAULT_PREFERENCES,
+  mealCount:3,
   savedMealIds:['m4'],
   spinHistory:[
     {mealId:'m1',at:'2026-11-24T12:10:00Z'},

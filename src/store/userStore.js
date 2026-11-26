@@ -23,6 +23,7 @@ const load=()=>{
       ...raw,
       biometrics:{...DEFAULT_BIOMETRICS,...raw.biometrics},
       preferences:{...DEFAULT_PREFERENCES,...raw.preferences},
+      mealCount:raw.mealCount||3,
       todayLog:Array.isArray(raw.todayLog)?raw.todayLog.filter(e=>isSameLocalDay(e.loggedAt,key)):[]
     }
   }catch{

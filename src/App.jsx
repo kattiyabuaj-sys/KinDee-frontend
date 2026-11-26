@@ -26,6 +26,7 @@ export default function App(){
   const [cur,setCur]=useState(null)
   const [curTarget,setCurTarget]=useState(null)
   const [us,setUs]=useUserStore()
+  const [mealCount,setMealCount]=useState(()=>us.mealCount||3)
 
   useEffect(()=>{fetchMeals().then(setMeals)},[])
   if(!meals.length)return<div className="p-8 text-center">กำลังโหลด…</div>
@@ -36,7 +37,7 @@ export default function App(){
   const setP=nextP=>setUs(s=>({...s,preferences:typeof nextP==='function'?nextP(s.preferences):nextP}))
 
   const dailyKcal=dailyTarget(u,p.goals)
-  const kcal=mealKcal(u,p.goals)
+  const kcal=mealKcal(u,p.goals,mealCount)
   const consumed=todayTotals(us)
   const remainingKcal=dailyKcal-consumed.cal
   const pool=filterMeals(meals,p).list
@@ -64,7 +65,7 @@ export default function App(){
   }
 
   const body=()=>{
-    if(scr==='setup')return<Setup u={u} setU={setU} next={()=>setScr('prefs')}/>
+    if(scr==='setup')return<Setup u={u} setU={setU} goals={p.goals} mealCount={mealCount} setMealCount={n=>{setMealCount(n);setUs(s=>({...s,mealCount:n}))}} next={()=>setScr('prefs')}/>
     if(scr==='prefs')return<Prefs p={p} setP={setP} meals={meals} back={()=>setScr('setup')} next={()=>{setTab('wheel');setScr('main')}}/>
     if(scr==='recipe')return(
       <Recipe
