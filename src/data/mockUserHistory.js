@@ -1,4 +1,15 @@
+/**
+ * Default persisted user state and seed history for first-time visitors.
+ * Stored in localStorage under `kindee.user.v1` and structured to match
+ * the backend user-profile & daily-log payloads.
+ */
+export const DEFAULT_BIOMETRICS={sex:'f',age:28,kg:62,cm:165,act:1}
+
+export const DEFAULT_PREFERENCES={goals:['lose'],kit:['q15'],ex:['spicy']}
+
 export const MOCK_USER_HISTORY={
+  biometrics:DEFAULT_BIOMETRICS,
+  preferences:DEFAULT_PREFERENCES,
   savedMealIds:['m4'],
   spinHistory:[
     {mealId:'m1',at:'2026-11-24T12:10:00Z'},
@@ -7,5 +18,6 @@ export const MOCK_USER_HISTORY={
   userSwapPreferences:{
     chicken_breast:{tofu_firm:3},
     jasmine_rice:{brown_rice:2}
-  }
+  },
+  todayLog:[]
 }

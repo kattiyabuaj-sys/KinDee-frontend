@@ -2,26 +2,40 @@ import {useState} from 'react'
 import {scaleMeal} from '../utils/nutrition'
 import {rulesFor} from '../data/mockSubstitutions'
 import {suggestSwap} from '../store/userStore'
+import DishImage from '../components/DishImage'
 
-export default function Recipe({m,kcal,back,again,saved,save,us,onSwap}){
+export default function Recipe({m,kcal,goals,back,again,saved,save,us,onSwap,onLogMeal,onOpenToday}){
   const [sw,setSw]=useState({})
   const [open,setOpen]=useState(null)
-  const {rows,tot}=scaleMeal(m,kcal,sw)
+  const [logged,setLogged]=useState(false)
+  const {rows,tot}=scaleMeal(m,kcal,sw,goals)
+
   const pick=(from,r)=>{
     const on=sw[from]!==r.id
     setSw(s=>({...s,[from]:on?r.id:undefined}))
+    setLogged(false)
     if(on)onSwap(from,r.targetIngredientId)
   }
+
+  const handleLog=()=>{
+    onLogMeal({mealId:m.id,nameTh:m.nameTh,nutrition:tot,swaps:sw})
+    setLogged(true)
+  }
+
   return(
     <div className="flex-1 overflow-y-auto pb-6">
-      <div className="h-44 px-4 pt-4 flex justify-between items-start bg-gradient-to-br from-tan to-green">
-        <button onClick={back} className="w-10 h-10 rounded-full bg-card">←</button>
-        <div className="flex gap-2">
-          <button onClick={save} className="w-10 h-10 rounded-full bg-card">{saved?'★':'☆'}</button>
-          <button onClick={again} className="bg-red text-white rounded-full px-4 h-10 font-semibold">🎲 สุ่มใหม่</button>
+      <div className="relative h-48">
+        <DishImage meal={m} className="h-full w-full"/>
+        <div className="absolute inset-x-0 top-0 p-4 flex justify-between items-start">
+          <button onClick={back} className="w-10 h-10 rounded-full bg-card/90 border border-tan shadow-sm">←</button>
+          <div className="flex gap-2">
+            <button onClick={save} className="w-10 h-10 rounded-full bg-card/90 border border-tan shadow-sm">{saved?'★':'☆'}</button>
+            <button onClick={again} className="bg-red text-white rounded-full px-4 h-10 font-semibold shadow-sm">🎲 สุ่มใหม่</button>
+          </div>
         </div>
       </div>
-      <div className="px-4 -mt-10">
+
+      <div className="px-4 -mt-8 relative z-10">
         <div className="card p-4">
           <div className="flex justify-between text-xs"><span className="chip">🌿 แนะนำตามเป้าหมายของคุณ</span><span>⏱ ใช้เวลา {m.prepTimeMins} นาที</span></div>
           <h1 className="text-2xl font-bold my-2">{m.nameTh}</h1>
@@ -34,7 +48,28 @@ export default function Recipe({m,kcal,back,again,saved,save,us,onSwap}){
             <span className="chip">{tot.na<=600?'โซเดียมต่ำ ':'โซเดียม '}{tot.na}mg</span>
             <span className="chip !text-brown !border-tan">฿{tot.cost}</span>
           </div>
+          <p className="text-[11px] opacity-65 mt-2.5 leading-snug">
+            คำนวณจากน้ำหนักวัตถุดิบจริงต่อ 100 กรัม (รวมโซเดียมจากเครื่องปรุงและน้ำตาลแฝงตามมาตรฐานกองโภชนาการ)
+          </p>
         </div>
+
+        {/* Log Meal CTA & Confirmation */}
+        <div className="mt-4">
+          {!logged?(
+            <button className="cta" onClick={handleLog}>
+              ✓ บันทึกมื้อนี้ ({tot.cal} kcal)
+            </button>
+          ):(
+            <div className="card p-3.5 border-green bg-green/10 space-y-2.5">
+              <div className="font-bold text-green text-sm">✓ บันทึก “{m.nameTh}” ({tot.cal} kcal) ลงข้อมูลของวันนี้แล้ว!</div>
+              <div className="grid grid-cols-2 gap-2">
+                <button className="btn-o py-2 bg-card" onClick={again}>🎲 สุ่มมื้อถัดไป</button>
+                <button className="rounded-full bg-green text-white text-sm font-semibold py-2" onClick={onOpenToday}>📊 ดูข้อมูลของวันนี้</button>
+              </div>
+            </div>
+          )}
+        </div>
+
         <div className="flex justify-between items-baseline mt-5 mb-2"><h2 className="text-xl font-bold">วัตถุดิบตามสัดส่วนของคุณ</h2><span className="text-xs">สำหรับ 1 มื้อ</span></div>
         <div className="card p-3 divide-y divide-tan/40">
           {rows.map(r=>{
