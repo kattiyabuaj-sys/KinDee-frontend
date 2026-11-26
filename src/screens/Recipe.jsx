@@ -8,7 +8,9 @@ export default function Recipe({m,kcal,goals,back,again,saved,save,us,onSwap,onL
   const [sw,setSw]=useState({})
   const [open,setOpen]=useState(null)
   const [logged,setLogged]=useState(false)
-  const {rows,tot}=scaleMeal(m,kcal,sw,goals)
+  const {rows,tot,targetKcal}=scaleMeal(m,kcal,sw,goals)
+  const diff=tot.cal-targetKcal
+  const diffPct=targetKcal?Math.round(Math.abs(diff)/targetKcal*100):0
 
   const pick=(from,r)=>{
     const on=sw[from]!==r.id
@@ -39,8 +41,19 @@ export default function Recipe({m,kcal,goals,back,again,saved,save,us,onSwap,onL
         <div className="card p-4">
           <div className="flex justify-between text-xs"><span className="chip">🌿 แนะนำตามเป้าหมายของคุณ</span><span>⏱ ใช้เวลา {m.prepTimeMins} นาที</span></div>
           <h1 className="text-2xl font-bold my-2">{m.nameTh}</h1>
+          {/* Target banner — always visible so user knows what kcal the portions are scaled to */}
+          <div className="flex items-center gap-2 mb-2 px-1 py-1.5 rounded-xl bg-[#F3EEE4] border border-tan text-xs font-semibold">
+            <span className="text-red">🎯</span>
+            <span>ปรับสัดส่วนให้ได้ <span className="font-num font-bold">{targetKcal}</span> kcal/มื้อ</span>
+            {diffPct<=5
+              ? <span className="ml-auto text-green">✓ ใกล้เคียงเป้ามาก</span>
+              : <span className="ml-auto text-brown opacity-70">ค่าจริง {tot.cal} kcal ({diff>0?'+':''}{diff})</span>
+            }
+          </div>
           <div className="flex flex-wrap gap-2 font-num text-sm font-bold">
-            <span className="chip !text-red !border-tan">{tot.cal} kcal</span>
+            <span className="chip !text-red !border-tan">{tot.cal} kcal
+              {diffPct>5&&<span className="font-normal text-[11px] opacity-70 ml-1">({diff>0?'+':''}{diff} จากเป้า {targetKcal})</span>}
+            </span>
             <span className="chip">โปรตีน {tot.p}g</span>
             <span className="chip">คาร์บ {tot.c}g</span>
             <span className="chip">ไขมัน {tot.f}g</span>

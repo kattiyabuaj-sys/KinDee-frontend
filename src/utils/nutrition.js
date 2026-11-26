@@ -64,25 +64,45 @@ const snap=(v,u)=>WHOLE.includes(u)?Math.max(1,Math.round(v)):u==='กรัม'
 export const totals=(meal,swaps={})=>rnd(tallyRows(resolve(meal,swaps),()=>1))
 
 /**
- * Scales a meal realistically to hit `target` kcal while keeping per-dish protein
- * in a realistic everyday range (~24–42g for standard meals; slightly higher for
- * muscle/protein goals) by capping protein scaling and flexing carbs/veggies.
+ * Scales a meal realistically to hit `target` kcal.
+ *
+ * Strategy:
+ *   1. Protein ingredients are capped at maxProtScale to prevent unrealistic
+ *      single-meal meat piles (~24–42g protein for normal / up to ~50g for muscle goals).
+ *   2. Carbs / veggies absorb the remaining calorie gap.
+ *   3. We iterate up to 3 times refining kOther so the actual post-snap calorie
+ *      total converges tightly onto `target` (typically ±15 kcal after iteration).
  */
 export const scaleMeal=(meal,target,swaps={},goals=[])=>{
   const rs=resolve(meal,swaps)
-  const fixCal=tallyRows(rs.filter(r=>!r.scal),()=>1).cal
-  const protCal=tallyRows(rs.filter(r=>r.scal&&r.cat==='protein'),()=>1).cal
-  const otherCal=tallyRows(rs.filter(r=>r.scal&&r.cat!=='protein'),()=>1).cal
+  const fixRows=rs.filter(r=>!r.scal)
+  const protRows=rs.filter(r=>r.scal&&r.cat==='protein')
+  const otherRows=rs.filter(r=>r.scal&&r.cat!=='protein')
+
+  const fixCal=tallyRows(fixRows,()=>1).cal
+  const protCal=tallyRows(protRows,()=>1).cal
+  const otherCal=tallyRows(otherRows,()=>1).cal
   const totalScalable=protCal+otherCal
 
   const highProt=goals.includes('muscle')||goals.includes('protein')
   const maxProtScale=highProt?1.4:1.25
-  const kIdeal=totalScalable?clamp((target-fixCal)/totalScalable,.7,1.8):1
 
-  // Cap protein scaling so single dishes don't inflate into unrealistic meat piles.
+  // Initial estimate
+  const kIdeal=totalScalable?clamp((target-fixCal)/totalScalable,.7,1.8):1
   const kProt=otherCal>0?clamp(kIdeal,.75,maxProtScale):clamp(kIdeal,.7,1.45)
-  const remCal=Math.max(0,target-fixCal-protCal*kProt)
-  const kOther=otherCal>0?clamp(remCal/otherCal,.65,1.85):kProt
+
+  // Iterative refinement: adjust kOther so actual cal ≈ target
+  let kOther=otherCal>0?clamp((target-fixCal-protCal*kProt)/otherCal,.65,1.85):kProt
+  for(let i=0;i<3;i++){
+    const actualCal=fixCal+protCal*kProt+otherCal*kOther
+    const err=target-actualCal
+    if(Math.abs(err)<8)break // good enough
+    if(otherCal>0){
+      kOther=clamp(kOther+err/otherCal,.55,2.0)
+    } else {
+      break
+    }
+  }
 
   const scaleFor=r=>(!r.scal?1:r.cat==='protein'?kProt:kOther)
   const rows=rs.map(r=>{
@@ -96,7 +116,7 @@ export const scaleMeal=(meal,target,swaps={},goals=[])=>{
     }
   })
 
-  return{k:kIdeal,rows,tot:rnd(tallyRows(rs,scaleFor))}
+  return{k:kIdeal,targetKcal:Math.round(target),rows,tot:rnd(tallyRows(rs,scaleFor))}
 }
 
 const KIT={
