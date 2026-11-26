@@ -10,12 +10,18 @@ export const bmr=({sex,age,kg,cm})=>10*kg+6.25*cm-5*age+(sex==='m'?5:-161)
 
 export const tdee=u=>Math.round(bmr(u)*FAC[u.act])
 
-/** Daily calorie target adjusted for weight gain (+10%) or fat loss (-15%). */
+/**
+ * Daily calorie target adjusted for weight goals:
+ *   lose  → TDEE × 0.80 (−20% deficit, clinically safe for sustained fat loss)
+ *   gain  → TDEE × 1.15 (+15% surplus for muscle gain)
+ *   default → TDEE (maintenance)
+ */
 export const dailyTarget=(u,goals=[])=>{
-  const adj=goals.includes('gain')?1.1:goals.includes('lose')?.85:1
+  const adj=goals.includes('gain')?1.15:goals.includes('lose')?.80:1
   return Math.round(tdee(u)*adj/10)*10
 }
 
+/** Per-meal calorie target — user-configurable meal count (default 3). */
 export const mealKcal=(u,goals=[],n=3)=>Math.round(dailyTarget(u,goals)/n/10)*10
 
 const unitOf=i=>i.standardUnits.find(u=>u.unit===i.defaultUnit)||{unit:'กรัม',grams:1}
@@ -111,17 +117,46 @@ const EX={
   spicy:m=>m.spiceLevel>0
 }
 
+/**
+ * Filter logic (intentionally strict → progressive fallback):
+ *
+ *  Goals ("เป้าหมายสุขภาพ"): uses ALL-must-match (AND) so selecting more goals
+ *  narrows the pool — adding "ลดโซเดียม" to "เพิ่มกล้ามเนื้อ" should REDUCE results,
+ *  not expand them. We separate calorie-goal flags (lose/gain) which influence
+ *  TDEE but do NOT filter the dish list from health/dietary tag goals (lowNa, lowFat
+ *  muscle, protein, sugar, clean) which must all be satisfied by matched dishes.
+ *
+ *  Fallback levels (lvl):
+ *    0 — strict: exclusions + kitchen + ALL health goals match
+ *    1 — relax kitchen/time constraints only
+ *    2 — relax health goal matching entirely (safe dishes only)
+ *    3 — full catalogue (last resort)
+ */
+const CALORIE_GOALS=new Set(['lose','gain']) // affect TDEE only, not dish filtering
 export const filterMeals=(all,p)=>{
-  const ok=(m,g,k)=>
-    !p.ex.some(e=>EX[e](m))&&
-    (!k||(p.kit.every(x=>KIT[x](m))&&(!m.equipment.includes('air_fryer')||p.kit.includes('airfry'))))&&
-    (!g||!p.goals.length||p.goals.some(x=>m.healthGoals.includes(x)))
-  const steps=[[1,1],[1,0],[0,0]]
-  for(let lvl=0;lvl<3;lvl++){
-    const list=all.filter(m=>ok(m,...steps[lvl]))
-    if(list.length)return{list,lvl}
+  const dishGoals=p.goals.filter(g=>!CALORIE_GOALS.has(g))
+
+  const passesExclusions=m=>!p.ex.some(e=>EX[e](m))
+  const passesKitchen=m=>
+    p.kit.every(x=>KIT[x](m))&&
+    (!m.equipment.includes('air_fryer')||p.kit.includes('airfry'))
+  // ALL selected dish-health goals must appear on the meal (AND semantics)
+  const passesAllGoals=m=>!dishGoals.length||dishGoals.every(g=>m.healthGoals.includes(g))
+  // At least ONE goal matches (looser fallback)
+  const passesAnyGoal=m=>!dishGoals.length||dishGoals.some(g=>m.healthGoals.includes(g))
+
+  const levels=[
+    m=>passesExclusions(m)&&passesKitchen(m)&&passesAllGoals(m),  // lvl 0: strict
+    m=>passesExclusions(m)&&passesAllGoals(m),                     // lvl 1: drop kitchen
+    m=>passesExclusions(m)&&passesAnyGoal(m),                      // lvl 2: ANY goal
+    m=>passesExclusions(m)                                          // lvl 3: exclusions only
+  ]
+
+  for(let lvl=0;lvl<levels.length;lvl++){
+    const list=all.filter(levels[lvl])
+    if(list.length>=3||lvl===levels.length-1)return{list,lvl}
   }
-  return{list:all,lvl:3}
+  return{list:all,lvl:4}
 }
 
 /**
