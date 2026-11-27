@@ -44,6 +44,7 @@ export default function Wheel({pool,p,kcal,dailyKcal,consumedCal,remainingKcal,o
 
   // Mystery Card state (deals 6 cards from the full filtered pool)
   const [deckSeed,setDeckSeed]=useState(0)
+  const [shuffling,setShuffling]=useState(false)
   const dealtCards=useMemo(()=>{
     const picked=shuffle(fullPool).slice(0,6)
     return Array.from({length:Math.min(6,Math.max(3,fullPool.length))},(_,i)=>picked[i%picked.length])
@@ -91,7 +92,7 @@ export default function Wheel({pool,p,kcal,dailyKcal,consumedCal,remainingKcal,o
   }
 
   const pickCard=idx=>{
-    if(flippedIdx!==null)return
+    if(flippedIdx!==null||shuffling)return
     const chosen=dealtCards[idx]
     if(!chosen)return
     setFlippedIdx(idx)
@@ -99,8 +100,13 @@ export default function Wheel({pool,p,kcal,dailyKcal,consumedCal,remainingKcal,o
   }
 
   const redealCards=()=>{
+    if(shuffling)return
     setFlippedIdx(null)
-    setDeckSeed(s=>s+1)
+    setShuffling(true)
+    setTimeout(()=>{
+      setDeckSeed(s=>s+1)
+      setShuffling(false)
+    },420)
   }
 
   const reshuffleWheel=()=>{
@@ -256,24 +262,37 @@ export default function Wheel({pool,p,kcal,dailyKcal,consumedCal,remainingKcal,o
         <div className="space-y-3">
           <div className="flex items-center justify-between text-xs px-1">
             <span className="opacity-75">แตะเลือกไพ่ 1 ใบเพื่อเปิดดูเมนูของคุณ</span>
-            <button onClick={redealCards} className="font-bold text-red underline">🃏 สับไพ่ชุดใหม่</button>
+            <button onClick={redealCards} disabled={shuffling} className="font-bold text-red underline disabled:opacity-50">
+              {shuffling?'🃏 กำลังสับไพ่…':'🃏 สับไพ่ชุดใหม่'}
+            </button>
           </div>
           <div className="grid grid-cols-3 gap-2.5">
             {dealtCards.map((cardMeal,idx)=>{
               const revealed=flippedIdx===idx
               const dim=flippedIdx!==null&&!revealed
               const cardCal=scaleMeal(cardMeal,budget.mealTarget,{},p.goals).tot.cal
+              const col=idx%3
+              const row=Math.floor(idx/3)
+              const shuffleVars={
+                '--sx':`${(1-col)*26}px`,
+                '--sy':`${(row===0?16:-16)}px`,
+                '--sr':`${(col-1)*8}deg`,
+                animationDelay:shuffling?`${idx*25}ms`:`${idx*55}ms`
+              }
               return(
                 <button
                   key={`${deckSeed}_${idx}`}
                   onClick={()=>pickCard(idx)}
-                  disabled={flippedIdx!==null}
+                  disabled={flippedIdx!==null||shuffling}
+                  style={shuffleVars}
                   className={`h-36 rounded-2xl border-2 transition-all duration-300 overflow-hidden flex flex-col ${
-                    revealed
-                      ?'border-red bg-card shadow-md scale-[1.02]'
-                      :dim
-                        ?'border-tan/50 bg-[#EFE8DA] opacity-50'
-                        :'border-tan bg-gradient-to-br from-[#F7F3EA] to-[#E6D5BE] hover:border-red active:scale-95'
+                    shuffling
+                      ?'animate-card-shuffle border-tan bg-gradient-to-br from-[#F7F3EA] to-[#E6D5BE]'
+                      :revealed
+                        ?'border-red bg-card shadow-md scale-[1.02]'
+                        :dim
+                          ?'border-tan/50 bg-[#EFE8DA] opacity-50'
+                          :`${deckSeed>0?'animate-card-deal ':''}border-tan bg-gradient-to-br from-[#F7F3EA] to-[#E6D5BE] hover:border-red active:scale-95`
                   }`}
                 >
                   {revealed?(

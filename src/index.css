@@ -12,3 +12,16 @@ body{font-family:Anuphan,sans-serif;color:#673A25;line-height:1.6}
   .btn-o{@apply rounded-full border border-red text-red text-sm font-semibold px-4 py-1.5}
   input[type=range]{@apply w-full accent-red}
 }
+
+@keyframes cardShuffle{
+  0%{transform:translate(0,0) rotate(0deg) scale(1)}
+  30%{transform:translate(var(--sx,0px),var(--sy,0px)) rotate(var(--sr,-6deg)) scale(.92)}
+  65%{transform:translate(calc(var(--sx,0px)*-.4),calc(var(--sy,0px)*-.4)) rotate(calc(var(--sr,-6deg)*-.7)) scale(.95)}
+  100%{transform:translate(0,0) rotate(0deg) scale(1)}
+}
+@keyframes cardDeal{
+  0%{opacity:0;transform:translateY(-10px) scale(.92)}
+  100%{opacity:1;transform:translateY(0) scale(1)}
+}
+.animate-card-shuffle{animation:cardShuffle .42s cubic-bezier(.34,1.56,.64,1)}
+.animate-card-deal{animation:cardDeal .32s cubic-bezier(.22,1,.36,1) both}
