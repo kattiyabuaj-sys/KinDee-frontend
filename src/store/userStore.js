@@ -1,5 +1,5 @@
 import {useEffect,useState} from 'react'
-import {DEFAULT_BIOMETRICS,DEFAULT_PREFERENCES,MOCK_USER_HISTORY} from '../data/mockUserHistory'
+import {DEFAULT_BIOMETRICS,DEFAULT_PREFERENCES,DEFAULT_PROFILE,MOCK_USER_HISTORY} from '../data/mockUserHistory'
 
 const KEY='kindee.user.v1'
 const MAX_SPINS=50
@@ -22,8 +22,11 @@ const load=()=>{
       ...MOCK_USER_HISTORY,
       ...raw,
       biometrics:{...DEFAULT_BIOMETRICS,...raw.biometrics},
+      profile:{...DEFAULT_PROFILE,...raw.profile},
       preferences:{...DEFAULT_PREFERENCES,...raw.preferences},
       mealCount:raw.mealCount||3,
+      likedCommunityIds:Array.isArray(raw.likedCommunityIds)?raw.likedCommunityIds:[],
+      communityPoolIds:Array.isArray(raw.communityPoolIds)?raw.communityPoolIds:[],
       todayLog:Array.isArray(raw.todayLog)?raw.todayLog.filter(e=>isSameLocalDay(e.loggedAt,key)):[]
     }
   }catch{
@@ -36,6 +39,29 @@ export const isSaved=(s,id)=>s.savedMealIds.includes(id)
 export const toggleSaved=(s,id)=>({
   ...s,
   savedMealIds:isSaved(s,id)?s.savedMealIds.filter(x=>x!==id):[...s.savedMealIds,id]
+})
+
+export const updateProfile=(s,patch)=>({
+  ...s,
+  profile:{...DEFAULT_PROFILE,...s.profile,...patch}
+})
+
+export const isCommunityLiked=(s,id)=>(s.likedCommunityIds||[]).includes(id)
+
+export const toggleCommunityLikeState=(s,id)=>({
+  ...s,
+  likedCommunityIds:isCommunityLiked(s,id)
+    ?(s.likedCommunityIds||[]).filter(x=>x!==id)
+    :[...(s.likedCommunityIds||[]),id]
+})
+
+export const isInCommunityPool=(s,id)=>(s.communityPoolIds||[]).includes(id)
+
+export const toggleCommunityPoolState=(s,id)=>({
+  ...s,
+  communityPoolIds:isInCommunityPool(s,id)
+    ?(s.communityPoolIds||[]).filter(x=>x!==id)
+    :[...(s.communityPoolIds||[]),id]
 })
 
 export const addSpin=(s,mealId)=>({

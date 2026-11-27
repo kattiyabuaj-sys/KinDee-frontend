@@ -39,7 +39,7 @@ export default function Recipe({m,kcal,goals,back,again,saved,save,us,onSwap,onL
 
       <div className="px-4 -mt-8 relative z-10">
         <div className="card p-4">
-          <div className="flex justify-between text-xs"><span className="chip">🌿 แนะนำตามเป้าหมายของคุณ</span><span>⏱ ใช้เวลา {m.prepTimeMins} นาที</span></div>
+          <div className="flex justify-between text-xs gap-2"><span className="chip truncate">{m.isCommunity&&m.author?`${m.author.avatar} สูตรโดย ${m.author.name}`:'🌿 แนะนำตามเป้าหมายของคุณ'}</span><span className="shrink-0">⏱ ใช้เวลา {m.prepTimeMins} นาที</span></div>
           <h1 className="text-2xl font-bold my-2">{m.nameTh}</h1>
           {/* Target banner — always visible so user knows what kcal the portions are scaled to */}
           <div className="flex items-center gap-2 mb-2 px-1 py-1.5 rounded-xl bg-[#F3EEE4] border border-tan text-xs font-semibold">
