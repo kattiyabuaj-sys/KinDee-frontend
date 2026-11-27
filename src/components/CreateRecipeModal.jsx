@@ -59,6 +59,29 @@ export default function CreateRecipeModal({profile,onPublish,onClose}){
   const [dishStyle,setDishStyle]=useState('rice-bowl')
   const [imageUrl,setImageUrl]=useState('')
 
+  const handlePhotoPick=e=>{
+    const file=e.target.files?.[0]
+    if(!file)return
+    const reader=new FileReader()
+    reader.onload=ev=>{
+      const img=new Image()
+      img.onload=()=>{
+        const max=640
+        const ratio=Math.min(1,max/Math.max(img.width,img.height))
+        const w=Math.round(img.width*ratio)
+        const h=Math.round(img.height*ratio)
+        const canvas=document.createElement('canvas')
+        canvas.width=w
+        canvas.height=h
+        canvas.getContext('2d').drawImage(img,0,0,w,h)
+        setImageUrl(canvas.toDataURL('image/jpeg',0.8))
+      }
+      img.src=ev.target.result
+    }
+    reader.readAsDataURL(file)
+    e.target.value=''
+  }
+
   const [cat,setCat]=useState('all')
   const [query,setQuery]=useState('')
   const [lines,setLines]=useState([]) // [{ingredientId, amount, unit, gramsPerUnit, grams}]
@@ -266,15 +289,25 @@ export default function CreateRecipeModal({profile,onPublish,onClose}){
                     </button>
                   ))}
                 </div>
-                <div>
-                  <label className="block text-[11px] font-semibold opacity-75 mb-1">หรือวางลิงก์รูปอาหาร (ถ้ามี)</label>
-                  <input
-                    type="url"
-                    value={imageUrl}
-                    onChange={e=>setImageUrl(e.target.value)}
-                    placeholder="https://... (เว้นว่างไว้เพื่อใช้ภาพประกอบอัตโนมัติ)"
-                    className="w-full rounded-xl border border-tan bg-rice px-3 py-1.5 text-xs focus:outline-none focus:border-red"
-                  />
+                <div className="flex items-center gap-2 pt-0.5">
+                  <label className="flex-1 cursor-pointer rounded-xl border border-dashed border-tan bg-rice px-3 py-2 text-center text-xs font-bold text-brown hover:border-red transition">
+                    📷 {imageUrl?'เปลี่ยนรูปอาหารจากเครื่อง':'เลือกรูปอาหารจากเครื่อง'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoPick}
+                      className="hidden"
+                    />
+                  </label>
+                  {imageUrl&&(
+                    <button
+                      type="button"
+                      onClick={()=>setImageUrl('')}
+                      className="rounded-xl border border-tan bg-rice px-3 py-2 text-xs font-bold text-red"
+                    >
+                      ลบรูป
+                    </button>
+                  )}
                 </div>
               </div>
             </>
